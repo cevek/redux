@@ -1,93 +1,7 @@
-import * as React from "react";
-
-var a = function (proto:any, prop:string) {
-    var origProp = proto[prop];
-    return {
-        set: function (value:any) {
-            if (this['_' + prop] instanceof Base) {
-                this['_' + prop].disconnect();
-            }
-            this['_' + prop] = value;
-            if (value instanceof Base) {
-                value.connect();
-            }
-        },
-        get: function () {
-            return this['_' + prop];
-        }
-    }
-}
-
-var activeReducerLevel = 0;
-var reducer = function (proto:any, method:string) {
-    console.log(proto, method);
-    var origMethod = proto[method];
-    return {
-        value: function () {
-            activeReducerLevel++;
-            if (activeReducerLevel == 1) {
-                console.log(proto.constructor.name, this.__id, method);
-                console.log("call", method, arguments);
-            }
-            var res = origMethod.apply(this, arguments);
-            activeReducerLevel--;
-            if (activeReducerLevel === 0) {
-                root.forceUpdate();
-            }
-            return res;
-        }
-    }
-}
-
-var ID = 1;
-var instances:{[id:number]:Base} = {};
-(window as any).instances = instances;
-
-var root:Root;
-
-class Base {
-    private __id = ID++;
-    protected __store:BaseStore;
-
-    constructor(json?:any) {
-        for (var i in json) {
-            if (json.hasOwnProperty(i)) {
-                this[i] = json[i];
-            }
-        }
-    }
-
-    connect() {
-        instances[this.__id] = this;
-    }
-
-    disconnect() {
-        instances[this.__id] = null;
-    }
-}
-
-interface RootProps {
-    store:Store;
-    children?:any;
-}
-export class Root extends React.Component<RootProps, {}> {
-    constructor(props:RootProps) {
-        super(props);
-        props.store.setRoot(this);
-        root = this;
-        (window as any).root = this;
-
-    }
-
-    render() {
-        return React.cloneElement(this.props.children);
-    }
-}
-
-
-function fetch(url:string):Promise<{id:number}> {
+import {reducer, prop, BaseStore, Base} from "./lib";
+function fetch(url:string, obj:any):Promise<{id:number}> {
     return new Promise((resolve)=> {
-        setTimeout(()=>resolve({id: 123}), 1000);
+        setTimeout(()=>resolve(obj), 1000);
     });
 }
 
@@ -96,16 +10,15 @@ class FantasyEventStore extends Base {
 }
 
 class FantasyEventRaw extends Base {
-    @a
+    @prop
     id:number;
-    @a
+    @prop
     name:string;
 }
 
-
 class FantasyEvent extends FantasyEventRaw {
     static fetchId(id:number) {
-        return fetch('/getEvent/' + id);
+        return fetch('/getEvent/' + id, {id: 118, name: "TYUT"});
     }
 
     @reducer
@@ -116,10 +29,10 @@ class FantasyEvent extends FantasyEventRaw {
 
 
 class FantasyEventPageDataRaw extends Base {
-    @a
+    @prop
     substitutionsVisible = false;
-    @a
-    fantasyEvent:FantasyEvent;
+    @prop
+    fantasyEvent = new FantasyEvent({id: 12, name: "Pui"});
 }
 
 class FantasyEventPageData extends FantasyEventPageDataRaw {
@@ -144,24 +57,14 @@ class FantasyEventPageData extends FantasyEventPageDataRaw {
     }
 }
 
-class BaseStore extends Base {
-    root:Root;
-    __store = this;
-
-    setRoot(root:Root) {
-
-    }
-}
-
-
 export class Store extends BaseStore {
-    @a
+    @prop
     indexFantasyEvents = new FantasyEventStore();
-    @a
+    @prop
     fantasyEvents = new FantasyEventStore();
-    @a
+    @prop
     myFantasyEvents = new FantasyEventStore();
-    @a
+    @prop
     fantasyEventPageData = new FantasyEventPageData();
 }
 

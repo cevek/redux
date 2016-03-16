@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import {Store, Root} from "./store";
-export var store = new Store();
+import {Store} from "./store";
+import {Root, connect} from "./lib";
+var store = new Store();
 (window as any).store = store;
 
 
@@ -11,6 +12,8 @@ class MainPage extends React.Component<{}, {}> {
     }
 }
 
+
+@connect((store:Store)=>[store.fantasyEventPageData])
 class FantasyEventPage extends React.Component<{}, {}> {
     render() {
         console.log("rnder FantasyEventPage");
@@ -20,11 +23,10 @@ class FantasyEventPage extends React.Component<{}, {}> {
                 {store.fantasyEventPageData.substitutionsVisible ? 'hide' : 'show'}
             </button>
 
+            {store.fantasyEventPageData.fantasyEvent.name}
             <button onClick={()=>store.fantasyEventPageData.fetch(1)}>fetch</button>
             <button onClick={()=>store.fantasyEventPageData.setFName()}>setName</button>
         </div>;
-        // store.fantasyEventPageData.fetch(123)
-        // store.fantasyEventPageData.toggleSubstitutions();
     }
 }
 
